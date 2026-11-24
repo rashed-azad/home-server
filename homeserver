@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# One command to manage all home server services.  Run: ./homeserver help
+#
+# Each service lives in services/<name>/ and has a service.sh that sets:
+#   NAME   display name           UNITS  systemd units to start/stop
+#   URL    where to open it       DATA   folders to create (and delete on --purge)
+# and may define hooks (all optional):
+#   check    validate .env before installing
+#   prepare  extra install steps after unit files are written
+#   ready    run after start (default: print URL)
+#   backup   back up to the folder given as $1
+# Every *.container / *.network file in the folder (or .in template, filled
+# from .env) is installed to ~/.config/containers/systemd/.
+source "$(dirname "$(readlink -f "$0")")/scripts/lib.sh"
+
+usage() {
+  cat <<EOF
+Usage: ./homeserver <command> [service...|all] [options]
+
+  setup                          one-time host setup (sudo), then reboot
+  install   <service|all>        install or update (safe to run again)
+  uninstall <service> [--purge]  remove; --purge also deletes its data
+  backup    <service|all> [--to DIR]   default DIR: BACKUP_DIR in .env
+  status    <service|all>
+  restart   <service|all>
+  logs      <service|all>
+  list
+
+Services: $(list_services | tr '\n' ' ')
+EOF
+}
+
+list_services() {
+  local d
+  for d in "$ROOT"/services/*/service.sh; do basename "$(dirname "$d")"; done
+}
+
+# Load one service's settings and hooks (call inside a subshell)
+load_service() {
+  SVC="$1"
+  SVC_DIR="$ROOT/services/$SVC"
+  [ -f "$SVC_DIR/service.sh" ] || die "Unknown service '$SVC'. Try: ./homeserver list"
+  NAME="$SVC"; URL=""; UNITS=(); DATA=()
+  check()   { :; }
+  prepare() { :; }
+  ready()   { echo "$NAME is running: $URL"; }
+  backup()  { echo "$NAME: nothing to back up"; }
+  source "$SVC_DIR/service.sh"
+}
+
+# Source files of this service's unit files (*.container, *.network, *.in)
+unit_sources() {
+  local f
+  for f in "$SVC_DIR"/*.{container,network}{,.in}; do
+    [ -e "$f" ] && echo "$f"
+  done
+  return 0
+}
+
+do_install() {
+  echo "=== Installing $NAME"
+  check
+  mkdir -p "$QUADLET_DIR" "${DATA[@]}"
+
+  local src out image
+  local files=()
+  for src in $(unit_sources); do
+    out="$QUADLET_DIR/$(basename "${src%.in}")"
+    render "$src" "$out"
+    files+=("$out")
+  done
+
+  prepare
+
+  for image in $(grep -h '^Image=' "${files[@]}" | cut -d= -f2 | sort -u); do
+    [[ $image == localhost/* ]] || podman pull "$image"   # localhost = built in prepare
+  done
+
+  systemctl --user daemon-reload
+  systemctl --user restart "${UNITS[@]}"
+  ready
+}
+
+do_uninstall() {
+  echo "=== Removing $NAME"
+  systemctl --user stop "${UNITS[@]}" 2>/dev/null || true
+  local src
+  for src in $(unit_sources); do rm -f "$QUADLET_DIR/$(basename "${src%.in}")"; done
+  systemctl --user daemon-reload
+
+  if [ -n "$PURGE" ]; then
+    printf '  %s\n' "${DATA[@]}"
+    read -r -p "Delete ALL the folders above? Type yes: " answer
+    [ "$answer" = "yes" ] || die "Cancelled. Service removed, data kept."
+    podman unshare rm -rf "${DATA[@]}"
+    echo "Removed $NAME and its data."
+  else
+    echo "Removed $NAME. Data kept in: ${DATA[*]}"
+  fi
+}
+
+do_backup() {
+  [ -n "$DEST" ] || die "Set BACKUP_DIR in .env or use --to DIR"
+  [ -d "${DATA[0]}" ] || { echo "=== $NAME is not installed, skipped"; return; }
+  echo "=== Backing up $NAME to $DEST/$SVC"
+  mkdir -p "$DEST/$SVC"
+  backup "$DEST/$SVC"
+}
+
+# --- main ------------------------------------------------------------
+CMD="${1:-help}"; shift || true
+case "$CMD" in
+  help|-h|--help) usage; exit 0 ;;
+  list)  list_services; exit 0 ;;
+  setup) exec "$ROOT/scripts/setup-host.sh" ;;
+esac
+
+load_env
+PURGE=""; DEST="${BACKUP_DIR:-}"; SERVICES=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --purge) PURGE=1 ;;
+    --to)    DEST="${2:?--to needs a folder}"; shift ;;
+    all)     mapfile -t -O "${#SERVICES[@]}" SERVICES < <(list_services) ;;
+    *)       SERVICES+=("$1") ;;
+  esac
+  shift
+done
+[ ${#SERVICES[@]} -gt 0 ] || { usage; exit 1; }
+
+# All systemd units of the chosen services
+units() { local s; for s in "${SERVICES[@]}"; do ( load_service "$s"; echo "${UNITS[@]}" ); done; }
+
+case "$CMD" in
+  install)   for s in "${SERVICES[@]}"; do ( load_service "$s"; do_install ); done ;;
+  uninstall) for s in "${SERVICES[@]}"; do ( load_service "$s"; do_uninstall ); done ;;
+  backup)    for s in "${SERVICES[@]}"; do ( load_service "$s"; do_backup ); done ;;
+  status)    systemctl --user status --no-pager $(units) || true ;;
+  restart)   systemctl --user restart $(units) ;;
+  logs)      journalctl --user -f $(printf -- '-u %s ' $(units)) ;;
+  *)         usage; exit 1 ;;
+esac

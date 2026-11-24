@@ -1,0 +1,27 @@
+# Podman Quadlet template. ./homeserver install fills in the placeholders from .env
+# and saves it as ~/.config/containers/systemd/jellyfin.container
+[Unit]
+Description=Jellyfin media server
+After=network-online.target
+
+[Container]
+Image=docker.io/jellyfin/jellyfin:@JELLYFIN_VERSION@
+ContainerName=jellyfin
+# Use the server's network directly (fastest for video). Web UI on port 8096.
+Network=host
+Environment=TZ=@TZ@
+Volume=%h/.local/share/jellyfin/config:/config
+Volume=%h/.local/share/jellyfin/cache:/cache
+# Your media, read-only (Jellyfin can't change or delete it)
+Volume=@JELLYFIN_MEDIA_DIR@:/media:ro
+# Intel graphics chip, for converting video
+AddDevice=/dev/dri/renderD128
+PodmanArgs=--memory=@JELLYFIN_MEM_LIMIT@ --cpus=@JELLYFIN_CPUS@ --group-add=keep-groups --no-healthcheck
+
+[Service]
+Restart=always
+# The first start of a new version can be slow
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

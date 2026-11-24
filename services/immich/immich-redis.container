@@ -1,0 +1,14 @@
+# Small in-memory job queue for Immich.
+[Unit]
+Description=Immich job queue (Valkey)
+
+[Container]
+Image=docker.io/valkey/valkey:9
+ContainerName=immich-redis
+Network=immich.network
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,23 @@
+# Unbound service (rootless Podman Quadlet).
+# install.sh copies this file to ~/.config/containers/systemd/unbound.container
+[Unit]
+Description=Unbound DNS resolver for Pi-hole
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=localhost/pihole-unbound:latest
+ContainerName=unbound
+# Only this computer can reach Unbound, never the LAN
+PublishPort=127.0.0.1:5335:5335/tcp
+PublishPort=127.0.0.1:5335:5335/udp
+# Hardening: files inside the container can't be changed,
+# and no process can gain extra privileges
+ReadOnly=true
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

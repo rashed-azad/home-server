@@ -1,0 +1,31 @@
+# Immich server: web page, API and background jobs.
+# No machine learning container, to save RAM.
+# ./homeserver install fills in the placeholders from .env.
+[Unit]
+Description=Immich server
+Requires=immich-postgres.service immich-redis.service
+After=immich-postgres.service immich-redis.service
+
+[Container]
+Image=ghcr.io/immich-app/immich-server:@IMMICH_VERSION@
+ContainerName=immich-server
+Network=immich.network
+PublishPort=@IMMICH_PORT@:2283
+Environment=TZ=@TZ@
+Environment=DB_HOSTNAME=immich-postgres
+Environment=DB_USERNAME=postgres
+Environment=DB_DATABASE_NAME=immich
+Environment=REDIS_HOSTNAME=immich-redis
+# Contains DB_PASSWORD
+EnvironmentFile=%h/.config/immich/db.env
+# Photos, videos, thumbnails and Immich's automatic database backups
+Volume=@IMMICH_PHOTOS_DIR@:/data
+Volume=/etc/localtime:/etc/localtime:ro
+
+[Service]
+Restart=always
+# The first start of a new version can be slow (database update)
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

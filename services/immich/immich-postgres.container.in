@@ -1,0 +1,21 @@
+# Immich database. ./homeserver install fills in the placeholders from .env.
+[Unit]
+Description=Immich database (PostgreSQL)
+
+[Container]
+Image=ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+ContainerName=immich-postgres
+Network=immich.network
+Environment=POSTGRES_USER=postgres
+Environment=POSTGRES_DB=immich
+Environment=POSTGRES_INITDB_ARGS=--data-checksums
+# Contains POSTGRES_PASSWORD
+EnvironmentFile=%h/.config/immich/db.env
+Volume=@IMMICH_DB_DIR@:/var/lib/postgresql/data
+PodmanArgs=--shm-size=128m
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
