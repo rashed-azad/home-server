@@ -1,0 +1,3 @@
+# Private network so the 5 Paperless containers can talk to each other by name.
+[Network]
+NetworkName=paperless

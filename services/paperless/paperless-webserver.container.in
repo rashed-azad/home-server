@@ -1,0 +1,71 @@
+# Paperless-ngx: web page, API, OCR and background jobs.
+# ./homeserver install fills in the placeholders from .env.
+[Unit]
+Description=Paperless-ngx
+Requires=paperless-postgres.service paperless-redis.service paperless-tika.service paperless-gotenberg.service
+After=paperless-postgres.service paperless-redis.service paperless-tika.service paperless-gotenberg.service
+
+[Container]
+Image=ghcr.io/paperless-ngx/paperless-ngx:@PAPERLESS_VERSION@
+ContainerName=paperless-webserver
+Network=paperless.network
+PublishPort=@PAPERLESS_WEB_PORT@:8000
+# Paperless runs as user 1000 inside; this maps it to me, so I own all its files
+# (and can drop files into the consume folder).
+# Start as root: Paperless sets itself up, then switches to user 1000.
+PodmanArgs=--userns=keep-id:uid=1000,gid=1000 --user=0:0
+
+# --- Connections
+Environment=PAPERLESS_REDIS=redis://paperless-redis:6379
+Environment=PAPERLESS_DBENGINE=postgresql
+Environment=PAPERLESS_DBHOST=paperless-postgres
+Environment=PAPERLESS_DBUSER=paperless
+Environment=PAPERLESS_DBNAME=paperless
+Environment=PAPERLESS_TIKA_ENABLED=1
+Environment=PAPERLESS_TIKA_ENDPOINT=http://paperless-tika:9998
+Environment=PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://paperless-gotenberg:3000
+# Contains PAPERLESS_DBPASS and PAPERLESS_SECRET_KEY
+EnvironmentFile=%h/.config/paperless/paperless.env
+
+# --- General
+Environment=PAPERLESS_URL=http://@SERVER_IP@:@PAPERLESS_WEB_PORT@
+Environment=PAPERLESS_TIME_ZONE=@TZ@
+# Expect dates like 24.11.2026 (day first)
+Environment=PAPERLESS_DATE_ORDER=DMY
+
+# --- Text recognition (OCR)
+Environment=PAPERLESS_OCR_LANGUAGE=@PAPERLESS_OCR_LANGUAGE@
+Environment="PAPERLESS_OCR_LANGUAGES=@PAPERLESS_OCR_LANGUAGES@"
+Environment=PAPERLESS_OCR_ROTATE_PAGES=true
+Environment=PAPERLESS_OCR_DESKEW=true
+
+# --- Consume folder: drop files in, they are imported and removed
+Environment=PAPERLESS_CONSUMER_RECURSIVE=true
+# consume/Bills/Power/x.pdf gets the tags "Bills" and "Power"
+Environment=PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS=true
+# Skip files that are already in Paperless, and delete them from consume
+Environment=PAPERLESS_CONSUMER_DELETE_DUPLICATES=true
+# Scan front sides into consume/double-sided/, then back sides: one document
+Environment=PAPERLESS_CONSUMER_ENABLE_COLLATE_DOUBLE_SIDED=true
+# Barcode sheets: "PATCHT" splits a scan into documents, "ASN00042" sets the
+# archive number (to find the paper original), "TAG:Bills" adds a tag
+Environment=PAPERLESS_CONSUMER_ENABLE_BARCODES=true
+Environment=PAPERLESS_CONSUMER_ENABLE_ASN_BARCODE=true
+Environment=PAPERLESS_CONSUMER_ENABLE_TAG_BARCODE=true
+
+# --- Stored files: media/documents/originals/2026/My bank/Statement.pdf
+Environment="PAPERLESS_FILENAME_FORMAT={{ created_year }}/{{ correspondent }}/{{ title }}"
+Environment=PAPERLESS_FILENAME_FORMAT_REMOVE_NONE=true
+
+Volume=%h/.local/share/paperless/data:/usr/src/paperless/data
+Volume=%h/.local/share/paperless/media:/usr/src/paperless/media
+Volume=%h/.local/share/paperless/export:/usr/src/paperless/export
+Volume=@PAPERLESS_CONSUME_DIR@:/usr/src/paperless/consume
+
+[Service]
+Restart=always
+# The first start of a new version can be slow (database update)
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

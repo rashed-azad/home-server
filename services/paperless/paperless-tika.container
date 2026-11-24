@@ -1,0 +1,14 @@
+# Reads text from Office files (Word, Excel, PowerPoint, LibreOffice) and emails.
+[Unit]
+Description=Paperless Office file reader (Apache Tika)
+
+[Container]
+Image=docker.io/apache/tika:3.3.1.0
+ContainerName=paperless-tika
+Network=paperless.network
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

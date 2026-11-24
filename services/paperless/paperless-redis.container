@@ -1,0 +1,15 @@
+# Job queue for Paperless (Valkey, a Redis replacement).
+[Unit]
+Description=Paperless job queue (Valkey)
+
+[Container]
+Image=docker.io/valkey/valkey:9-alpine
+ContainerName=paperless-redis
+Network=paperless.network
+Volume=%h/.local/share/paperless/redis:/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

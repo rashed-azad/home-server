@@ -1,0 +1,16 @@
+# Turns Office files and emails into PDFs.
+# JavaScript and outside content (e.g. tracking pixels in emails) are blocked.
+[Unit]
+Description=Paperless PDF converter (Gotenberg)
+
+[Container]
+Image=docker.io/gotenberg/gotenberg:8.38
+ContainerName=paperless-gotenberg
+Network=paperless.network
+Exec=gotenberg --chromium-disable-javascript=true --chromium-allow-list=^file:///tmp/.*
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

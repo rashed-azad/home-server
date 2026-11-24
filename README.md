@@ -10,6 +10,7 @@ setup needs sudo.
 | [youtrack](services/youtrack) | Issue tracker | `http://<SERVER_IP>:8081` |
 | [jellyfin](services/jellyfin) | Media server | `http://<SERVER_IP>:8096` |
 | [immich](services/immich) | Photo backup | `http://<SERVER_IP>:2283` |
+| [paperless](services/paperless) | Document scanning, OCR and search | `http://<SERVER_IP>:8000` |
 
 ## Quick start
 ```bash
@@ -39,6 +40,7 @@ Changed `.env` or want to update? Run `./homeserver install <service>` again.
 | youtrack | copy of YouTrack's own backups |
 | jellyfin | `config-<date>.tar.gz` (settings, not media; stops Jellyfin for a moment) |
 | immich | all photos, videos and Immich's daily database backups (only new files) |
+| paperless | Paperless's own export: all documents, tags, settings, users (only new files) |
 
 ## Layout
 ```
@@ -58,5 +60,5 @@ files. See the comment at the top of [homeserver](homeserver).
 
 ## Where things live
 - Generated units: `~/.config/containers/systemd/`
-- Data: `~/.local/share/<service>/` (Immich: folders set in `.env`)
+- Data: `~/.local/share/<service>/` (Immich and the Paperless consume folder: set in `.env`)
 - Needs Podman 4.4+ (`podman --version`).
