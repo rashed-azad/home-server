@@ -4,7 +4,7 @@ URL="http://$SERVER_IP:$PIHOLE_WEB_PORT/admin"
 UNITS=(unbound pihole)
 DATA=(~/.local/share/pihole/etc-pihole ~/.config/pihole)
 
-check() { require PIHOLE_PASSWORD; }
+check() { require PIHOLE_PASSWORD HOME_DOMAIN; }
 
 prepare() {
   ( umask 077; echo "FTLCONF_webserver_api_password=$PIHOLE_PASSWORD" > ~/.config/pihole/pihole.env )
@@ -17,7 +17,9 @@ ready() {
   sleep 15
   dig +short +time=3 @"$SERVER_IP" google.com | grep -q . ||
     die "DNS test failed. Check: ./homeserver logs pihole"
-  echo "Pi-hole is running: $URL   DNS: $SERVER_IP"
+  [ "$(dig +short +time=3 @"$SERVER_IP" "pihole.$HOME_DOMAIN")" = "$SERVER_IP" ] ||
+    die "*.$HOME_DOMAIN does not point to $SERVER_IP. Check: ./homeserver logs pihole"
+  echo "Pi-hole is running: $URL   DNS: $SERVER_IP   *.$HOME_DOMAIN -> $SERVER_IP"
 }
 
 backup() {

@@ -1,0 +1,20 @@
+// Add these two blocks to your Tailscale policy file:
+//   https://login.tailscale.com/admin/acls/file
+// Keep the rest of the file (grants/acls, ssh, ...) as it is.
+{
+	// Admins may give a device the tag "tag:server".
+	// Tagged devices never expire, so the server never asks to log in again.
+	"tagOwners": {
+		"tag:server": ["autogroup:admin"],
+	},
+
+	// Approve the home network route of tag:server devices automatically
+	// (covers every private range, so changing LAN_SUBNET needs no click).
+	"autoApprovers": {
+		"routes": {
+			"192.168.0.0/16": ["tag:server"],
+			"172.16.0.0/12":  ["tag:server"],
+			"10.0.0.0/8":     ["tag:server"],
+		},
+	},
+}

@@ -21,8 +21,9 @@ Environment=FTLCONF_dns_listeningMode=all
 # Unbound already checks DNSSEC, so Pi-hole doesn't need to.
 Environment="FTLCONF_dns_upstreams=10.0.2.2#5335"
 Environment="FTLCONF_dns_dnssec=false"
-# Never hand out IPv6 (AAAA) answers to LAN clients
-Environment="FTLCONF_misc_dnsmasq_lines=filter-AAAA"
+# filter-AAAA: never hand out IPv6 answers to LAN clients.
+# address=: every *.HOME_DOMAIN name -> this server (Caddy picks the service).
+Environment="FTLCONF_misc_dnsmasq_lines=filter-AAAA;address=/@HOME_DOMAIN@/@SERVER_IP@"
 # Contains FTLCONF_webserver_api_password
 EnvironmentFile=%h/.config/pihole/pihole.env
 Volume=%h/.local/share/pihole/etc-pihole:/etc/pihole

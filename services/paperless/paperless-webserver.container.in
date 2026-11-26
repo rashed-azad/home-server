@@ -28,7 +28,9 @@ Environment=PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://paperless-gotenberg:3000
 EnvironmentFile=%h/.config/paperless/paperless.env
 
 # --- General
-Environment=PAPERLESS_URL=http://@SERVER_IP@:@PAPERLESS_WEB_PORT@
+# Address served by Caddy. The old IP:port address keeps working for logins too.
+Environment=PAPERLESS_URL=http://paperless.@HOME_DOMAIN@
+Environment=PAPERLESS_CSRF_TRUSTED_ORIGINS=http://@SERVER_IP@:@PAPERLESS_WEB_PORT@
 Environment=PAPERLESS_TIME_ZONE=@TZ@
 # Expect dates like 24.11.2026 (day first)
 Environment=PAPERLESS_DATE_ORDER=DMY

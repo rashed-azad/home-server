@@ -1,0 +1,29 @@
+# Name -> service. ./homeserver install caddy fills in the placeholders from .env.
+# Pi-hole answers every *.@HOME_DOMAIN@ name with this server's IP, so to add a
+# service just add a block here and run: ./homeserver install caddy
+{
+	# Plain http: .@HOME_DOMAIN@ names can't get public HTTPS certificates
+	auto_https off
+	admin off
+}
+
+http://pihole.@HOME_DOMAIN@ {
+	redir / /admin
+	reverse_proxy @SERVER_IP@:@PIHOLE_WEB_PORT@
+}
+
+http://youtrack.@HOME_DOMAIN@ {
+	reverse_proxy @SERVER_IP@:@YOUTRACK_PORT@
+}
+
+http://jellyfin.@HOME_DOMAIN@ {
+	reverse_proxy @SERVER_IP@:8096
+}
+
+http://immich.@HOME_DOMAIN@ {
+	reverse_proxy @SERVER_IP@:@IMMICH_PORT@
+}
+
+http://paperless.@HOME_DOMAIN@ {
+	reverse_proxy @SERVER_IP@:@PAPERLESS_WEB_PORT@
+}
