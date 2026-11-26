@@ -23,7 +23,10 @@ and disable that one list in Web UI > Adlists.
 - `dig @<SERVER_IP> dnssec-failed.org` should return `SERVFAIL`
 
 ## Notes
-- Unbound only listens on `127.0.0.1:5335`; config in [unbound/unbound.conf](unbound/unbound.conf).
+- Unbound runs inside Pi-hole's network and listens on `127.0.0.1:5335` there, so
+  only Pi-hole can reach it (not the host, not the LAN). Config in
+  [unbound/unbound.conf](unbound/unbound.conf). Restarting Pi-hole restarts Unbound too.
+- Unbound logs: `journalctl --user -u unbound` (errors only, `verbosity: 1`).
 - To use Cloudflare instead of Unbound: set `FTLCONF_dns_upstreams=1.1.1.1;1.0.0.1`
   in [pihole.container.in](pihole.container.in) and install again.
 - IPv6: the host has it disabled (`setup-host.sh`) and Pi-hole never returns AAAA answers.

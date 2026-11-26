@@ -1,7 +1,7 @@
 # Pi-hole + Unbound. Used by ./homeserver (see the top of that file).
 NAME="Pi-hole"
 URL="http://$SERVER_IP:$PIHOLE_WEB_PORT/admin"
-UNITS=(unbound pihole)
+UNITS=(pihole unbound)
 DATA=(~/.local/share/pihole/etc-pihole ~/.config/pihole)
 
 check() { require PIHOLE_PASSWORD HOME_DOMAIN; }

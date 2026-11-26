@@ -2,24 +2,24 @@
 # and saves it as ~/.config/containers/systemd/pihole.container
 [Unit]
 Description=Pi-hole (rootless Podman)
+# Unbound joins Pi-hole's network, so it starts after Pi-hole (see unbound.container)
 Wants=network-online.target unbound.service
-After=network-online.target unbound.service
+After=network-online.target
 
 [Container]
 Image=docker.io/pihole/pihole:latest
 ContainerName=pihole
 # Keep the real client IP (default rootless mode hides it).
-# allow_host_loopback=true lets Pi-hole reach Unbound.
-Network=slirp4netns:port_handler=slirp4netns,allow_host_loopback=true
+Network=slirp4netns:port_handler=slirp4netns
 # Only on the LAN IP, so it does not clash with systemd-resolved (127.0.0.53)
 PublishPort=@SERVER_IP@:53:53/tcp
 PublishPort=@SERVER_IP@:53:53/udp
 PublishPort=@SERVER_IP@:@PIHOLE_WEB_PORT@:80/tcp
 Environment=TZ=@TZ@
 Environment=FTLCONF_dns_listeningMode=all
-# Send allowed queries to Unbound. 10.0.2.2 = this computer's 127.0.0.1.
+# Send allowed queries to Unbound, which runs in this container's network.
 # Unbound already checks DNSSEC, so Pi-hole doesn't need to.
-Environment="FTLCONF_dns_upstreams=10.0.2.2#5335"
+Environment="FTLCONF_dns_upstreams=127.0.0.1#5335"
 Environment="FTLCONF_dns_dnssec=false"
 # filter-AAAA: never hand out IPv6 answers to LAN clients.
 # address=: every *.HOME_DOMAIN name -> this server (Caddy picks the service).
