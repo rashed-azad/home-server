@@ -18,6 +18,7 @@ usage() {
 Usage: ./homeserver <command> [service...|all] [options]
 
   setup                          one-time host setup (sudo), then reboot
+  desktop   off|on|status        turn the desktop off (saves RAM) or on (sudo)
   install   <service|all>        install or update (safe to run again)
   uninstall <service> [--purge]  remove; --purge also deletes its data
   backup    <service|all> [--to DIR]   default DIR: BACKUP_DIR in .env
@@ -113,6 +114,7 @@ case "$CMD" in
   help|-h|--help) usage; exit 0 ;;
   list)  list_services; exit 0 ;;
   setup) exec "$ROOT/scripts/setup-host.sh" ;;
+  desktop) exec "$ROOT/scripts/desktop.sh" "$@" ;;
 esac
 
 load_env

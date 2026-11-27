@@ -68,6 +68,20 @@ Notes:
 | Logs | `./homeserver logs <service>` |
 | Restart | `./homeserver restart <service\|all>` |
 | List services | `./homeserver list` |
+| Desktop off / on | `./homeserver desktop off` / `on` / `status` (see below) |
+
+## Desktop off (saves RAM)
+The server doesn't need a desktop. Turning it off frees RAM and CPU for the
+services, which keep running either way.
+
+```bash
+./homeserver desktop off      # from the next reboot: text login only
+./homeserver desktop on       # desktop back, right away and after reboots
+./homeserver desktop status   # which one is set
+```
+Before turning it off, make sure you can log in over SSH (or Tailscale SSH) from
+another computer. At the server itself you get a text login instead of the
+desktop. Log in there and run `./homeserver desktop on` to get the desktop back.
 
 ## Backups
 `./homeserver backup all` saves each service to `BACKUP_DIR/<service>/`:
@@ -87,6 +101,7 @@ Notes:
 ├── .env.example        settings for all services (copy to .env)
 ├── scripts/
 │   ├── setup-host.sh   one-time host setup (sudo)
+│   ├── desktop.sh      turn the desktop off or on (sudo)
 │   └── lib.sh          shared helpers
 └── services/<name>/
     ├── service.sh      units, data folders, and service-specific steps
