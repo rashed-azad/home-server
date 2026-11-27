@@ -5,6 +5,8 @@ Description=Pi-hole (rootless Podman)
 # Unbound joins Pi-hole's network, so it starts after Pi-hole (see unbound.container)
 Wants=network-online.target unbound.service
 After=network-online.target
+# Never give up retrying (see Restart= below)
+StartLimitIntervalSec=0
 
 [Container]
 Image=docker.io/pihole/pihole:latest
@@ -30,7 +32,13 @@ Volume=%h/.local/share/pihole/etc-pihole:/etc/pihole
 AutoUpdate=registry
 
 [Service]
+# Pi-hole only listens on SERVER_IP. At boot Wi-Fi can be slower than Pi-hole,
+# so wait until this computer has that address (up to 2 minutes).
+ExecStartPre=/usr/bin/timeout 120 /bin/sh -c 'until ip -4 -br addr | grep -qF " @SERVER_IP@/"; do sleep 1; done'
+TimeoutStartSec=180
+# If it still fails, try again every 5 seconds
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=default.target

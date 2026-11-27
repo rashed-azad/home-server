@@ -29,4 +29,6 @@ and disable that one list in Web UI > Adlists.
 - Unbound logs: `journalctl --user -u unbound` (errors only, `verbosity: 1`).
 - To use Cloudflare instead of Unbound: set `FTLCONF_dns_upstreams=1.1.1.1;1.0.0.1`
   in [pihole.container.in](pihole.container.in) and install again.
+- At boot Pi-hole waits (up to 2 minutes) until the server has `SERVER_IP`, because
+  Wi-Fi can connect after Pi-hole starts. If it still fails, it retries every 5 seconds.
 - IPv6: the host has it disabled (`setup-host.sh`) and Pi-hole never returns AAAA answers.
